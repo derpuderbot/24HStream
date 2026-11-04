@@ -4,13 +4,15 @@
 <div class="hud"><h3>Seite</h3><label>Titel <input data-p="site.title"></label><label>Untertitel <input data-p="site.subtitle"></label><label>Footer <input data-p="site.footer" size="42"></label></div>
 <div class="hud"><h3>Design</h3><label>Akzent <input type="color" data-p="theme.accent"></label><label>Akzent 2 <input type="color" data-p="theme.accent2"></label><label>Hintergrund <input type="color" data-p="theme.bg"></label><label><input type="checkbox" data-p="theme.scanlines"> Scanlines</label><label><input type="checkbox" data-p="theme.animations"> Animationen</label></div>
 <div class="hud"><h3>Bereiche anzeigen</h3><label><input type="checkbox" data-p="sections.hero"> Countdown/J.A.R.V.I.S.</label><label><input type="checkbox" data-p="sections.streamers"> Streamer-Karten</label><label><input type="checkbox" data-p="sections.streams"> Player</label><label><input type="checkbox" data-p="sections.stats"> Dashboard</label><label><input type="checkbox" data-p="sections.plan"> Programm</label><label><input type="checkbox" data-p="sections.clips"> Clips</label><label><input type="checkbox" data-p="sections.links"> Links</label></div>
+<div class="hud" id="lay"></div>
 <div class="hud"><h3>Event</h3><label>Startzeit <input type="datetime-local" id="start"></label><label>Dauer (Std.) <input type="number" min="1" data-p="durationHours"></label></div>
-<div class="hud"><h3>Player</h3><label>Standardansicht <select data-p="player.defaultView"><option value="dual">Doppelansicht</option><option value="a">Streamer 1</option><option value="b">Streamer 2</option></select></label><label><input type="checkbox" data-p="player.chat"> Chat standardmäßig an</label><label><input type="checkbox" data-p="player.muted"> Stumm starten</label><label>Chat-Höhe (px) <input type="number" min="200" data-p="player.chatHeight"></label></div>
+<div class="hud"><h3>Player</h3><label>Standardansicht <select data-p="player.defaultView"><option value="dual">Doppelansicht</option><option value="a">Streamer 1</option><option value="b">Streamer 2</option></select></label><label><input type="checkbox" data-p="player.chat"> Chat standardmäßig an</label><label><input type="checkbox" data-p="player.muted"> Stumm starten</label><label>Chat-Position <select data-p="player.chatPosition"><option value="below">unter den Streams</option><option value="side">neben jedem Stream</option></select></label><label>Chat-Höhe (px) <input type="number" min="200" data-p="player.chatHeight"></label></div>
 <div class="hud"><h3>Daten</h3><label>Aktualisierung (Sek., min. 30) <input type="number" min="30" data-p="data.refreshSeconds"></label><label><input type="checkbox" data-p="data.liveFallback"> Live-Abfrage im Browser (decapi.me)</label><label><input type="checkbox" data-p="data.showTwitchTracker"> TwitchTracker-Zeilen</label><br><label>Follower-Meilensteine (Komma) <input data-p="data.followerMilestones" data-list="1" size="42"></label><label>Event-Meilensteine in Std. (Komma) <input data-p="data.eventMilestones" data-list="1" size="24"></label></div>
 <div class="hud" id="st"></div><div id="lists"></div>
-<div class="hud"><h3>Aktionen</h3><button id="save">Speichern</button><button id="dl">Herunterladen</button><button id="cp">JSON kopieren</button><button id="reset">Lokale Änderungen verwerfen</button><span id="msg" class="mut"></span><textarea id="json" readonly></textarea></div></main>
+<div class="hud"><h3>Aktionen</h3><button id="save">Speichern (nur dieser Browser)</button><button id="dl">Herunterladen</button><button id="cp">JSON kopieren</button><button id="reset">Lokale Änderungen verwerfen</button><div class="row" style="margin-top:.8rem"><input id="ghrepo" placeholder="GitHub-Repo: benutzer/repo"><input id="ghbr" placeholder="Branch (main)" style="max-width:140px"><input id="ghtk" type="password" placeholder="Token (Contents: Read &amp; write)"><label><input type="checkbox" id="ghkeep"> Token merken</label><button id="gh">Auf GitHub speichern (für alle)</button></div><p id="msg" class="mut"></p><textarea id="json" readonly></textarea></div></main>
 <script>
 const D={schedule:[['hour','Stunde','number'],['title','Titel'],['note','Notiz']],games:[['name','Spiel'],['note','Notiz']],challenges:[['title','Challenge'],['note','Notiz']],clips:[['id','Clip-Link oder -ID'],['title','Titel']],socials:[['label','Name (z. B. Discord)'],['url','URL https://…']],links:[['label','Name'],['url','URL https://…']]};
+const SN={hero:'Countdown & J.A.R.V.I.S.',streamers:'Streamer-Karten',streams:'Player',stats:'Dashboard',plan:'Programm',clips:'Clips',links:'Links'};
 const T={schedule:'Streamplan',games:'Geplante Spiele',challenges:'Challenges',clips:'Clips manuell hinzufügen',socials:'Social Media & Discord',links:'Weitere Links'};
 const $=s=>document.querySelector(s),e=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let c;
@@ -20,8 +22,11 @@ const exs=s=>(s.extra||[]).map(x=>x.label+'|'+x.url).join('; ');
 async function load(){
   let o;try{const l=localStorage.getItem('cfgOverride');o=l?JSON.parse(l):await(await fetch('data/config.json')).json()}catch(x){o={}}
   c=mergeCfg(DEFAULTS,o);if(!c.streamers.length)c.streamers=[{login:'kevone2107',name:'KevOne2107'},{login:'sgt_buddie',name:'Sgt_Buddie'}];
+  const SEC=Object.keys(SN);c.layout.order=[...c.layout.order.filter(k=>SEC.includes(k)),...SEC.filter(k=>!c.layout.order.includes(k))];
   c.streamers.forEach(s=>s.extraText=exs(s));draw()}
+function drawLay(){$('#lay').innerHTML='<h3>Layout – Reihenfolge &amp; Breite</h3>'+c.layout.order.map((k,i)=>`<div class="row"><b style="min-width:220px">${i+1}. ${SN[k]}</b><button data-mv="${i}:-1">↑</button><button data-mv="${i}:1">↓</button><label><input type="checkbox" data-hf="${k}" ${c.layout.half[k]?'checked':''}> halbe Breite (Desktop)</label></div>`).join('')+'<label>Max. Seitenbreite in px (0 = volle Breite) <input type="number" min="0" data-p="layout.maxWidth"></label>'}
 function draw(){
+  drawLay();
   document.querySelectorAll('[data-p]').forEach(i=>{const v=getP(c,i.dataset.p);if(i.type=='checkbox')i.checked=!!v;else i.value=Array.isArray(v)?v.join(', '):(v??'')});
   $('#start').value=c.eventStart?toLocal(c.eventStart):'';
   $('#st').innerHTML='<h3>Streamer</h3>'+c.streamers.map((s,i)=>`<div class="row"><input data-s="${i}" data-f="login" value="${e(s.login)}" placeholder="Twitch-Login"><input data-s="${i}" data-f="name" value="${e(s.name)}" placeholder="Anzeigename"><input data-s="${i}" data-f="avatar" value="${e(s.avatar)}" placeholder="Profilbild-URL (optional)"><input data-s="${i}" data-f="extraText" value="${e(s.extraText)}" placeholder="Zusatzlinks: Name|URL; Name|URL"></div>`).join('');
@@ -37,12 +42,32 @@ const out=()=>$('#json').value=JSON.stringify(clean(),null,2);
 const msg=t=>{$('#msg').textContent=' '+t};
 document.addEventListener('input',x=>{const t=x.target,d=t.dataset;
   if(d.p){setP(c,d.p,t.type=='checkbox'?t.checked:d.list?t.value.split(',').map(s=>s.trim()).filter(Boolean).map(Number).filter(n=>!isNaN(n)):t.type=='number'?(+t.value||0):t.value)}
+  else if(d.hf)c.layout.half[d.hf]=t.checked;
   else if(d.s!=null)c.streamers[d.s][d.f]=t.value;
   else if(d.k)c[d.k][d.i][d.f]=d.f=='hour'?(t.value===''?'':+t.value):t.value;
   out()});
-document.addEventListener('click',x=>{const d=x.target.dataset;if(d.add){c[d.add].push({});draw()}if(d.del){const[k,i]=d.del.split(':');c[k].splice(+i,1);draw()}});
+document.addEventListener('click',x=>{const d=x.target.dataset;if(d.mv){const[i,dl]=d.mv.split(':').map(Number),o=c.layout.order,j=i+dl;if(j>=0&&j<o.length){[o[i],o[j]]=[o[j],o[i]];draw()}}if(d.add){c[d.add].push({});draw()}if(d.del){const[k,i]=d.del.split(':');c[k].splice(+i,1);draw()}});
 $('#start').oninput=out;
-$('#save').onclick=()=>{const o=clean();if(o.streamers.length<2)return msg('Zwei Streamer nötig.');localStorage.setItem('cfgOverride',JSON.stringify(o));msg('Gespeichert (nur dieser Browser).')};
+$('#save').onclick=()=>{const o=clean();if(o.streamers.length<2)return msg('Zwei Streamer nötig.');
+  try{localStorage.setItem('cfgOverride',JSON.stringify(o));if(localStorage.getItem('cfgOverride')!==JSON.stringify(o))throw 0;msg('Lokal gespeichert um '+new Date().toLocaleTimeString('de-DE')+' – gilt nur in diesem Browser. Für alle: „Auf GitHub speichern“.')}
+  catch(x){msg('FEHLER: Der Browser blockiert lokales Speichern (privater Modus, file:// oder Cookies/Websitedaten gesperrt). Nutze „Auf GitHub speichern“ oder „Herunterladen“.')}};
+try{const g=JSON.parse(localStorage.getItem('ghCfg')||'{}');$('#ghrepo').value=g.repo||'';$('#ghbr').value=g.br||'main';$('#ghtk').value=g.tk||'';$('#ghkeep').checked=!!g.tk}catch(x){$('#ghbr').value='main'}
+$('#gh').onclick=async()=>{
+  const repo=$('#ghrepo').value.trim(),br=$('#ghbr').value.trim()||'main',tk=$('#ghtk').value.trim(),o=clean();
+  if(!/^[\w.-]+\/[\w.-]+$/.test(repo)||!tk)return msg('Repo (benutzer/repo) und Token eintragen.');
+  if(o.streamers.length<2)return msg('Zwei Streamer nötig.');
+  try{localStorage.setItem('ghCfg',JSON.stringify({repo,br,tk:$('#ghkeep').checked?tk:''}))}catch(x){}
+  const url='https://api.github.com/repos/'+repo+'/contents/data/config.json',H={Authorization:'Bearer '+tk,Accept:'application/vnd.github+json'};
+  msg('Speichere auf GitHub …');
+  try{
+    const g=await fetch(url+'?ref='+encodeURIComponent(br),{headers:H});let sha;
+    if(g.ok)sha=(await g.json()).sha;else if(g.status!=404)throw new Error('Lesen fehlgeschlagen (HTTP '+g.status+') – Repo, Branch oder Token prüfen');
+    const body={message:'config: über config.html aktualisiert',branch:br,content:btoa(unescape(encodeURIComponent(JSON.stringify(o,null,2)+'\n')))};if(sha)body.sha=sha;
+    const p=await fetch(url,{method:'PUT',headers:{...H,'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!p.ok)throw new Error('Schreiben fehlgeschlagen (HTTP '+p.status+'): '+((await p.json().catch(()=>({}))).message||''));
+    try{localStorage.removeItem('cfgOverride')}catch(x){}
+    msg('Auf GitHub gespeichert. Die Seite ist nach ca. 1–2 Minuten für alle aktualisiert (Actions-Lauf abwarten).')
+  }catch(x){msg('FEHLER: '+x.message)}};
 $('#reset').onclick=()=>{localStorage.removeItem('cfgOverride');load();msg('Zurückgesetzt auf data/config.json.')};
 $('#cp').onclick=()=>navigator.clipboard.writeText($('#json').value).then(()=>msg('Kopiert.'),()=>msg('Kopieren nicht möglich.'));
 $('#dl').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([$('#json').value],{type:'application/json'}));a.download='config.json';a.click()};

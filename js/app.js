@@ -27,6 +27,9 @@ function applyCfg(){
   r.setProperty('--c',t.accent);r.setProperty('--t',t.accent2);r.setProperty('--bg',t.bg);r.setProperty('--ch',cfg.player.chatHeight+'px');
   document.body.classList.toggle('noscan',!t.scanlines);document.body.classList.toggle('noanim',!t.animations);
   document.title=cfg.site.title+' · '+cfg.site.subtitle;$('h1').firstChild.nodeValue=cfg.site.title;$('h1 small').textContent=cfg.site.subtitle;$('#foot').textContent=cfg.site.footer;
+  const SEC=['hero','streamers','streams','stats','plan','clips','links'],L=cfg.layout,ord=[...L.order.filter(k=>SEC.includes(k)),...SEC.filter(k=>!L.order.includes(k))],m=$('main');
+  m.style.maxWidth=L.maxWidth?L.maxWidth+'px':'none';m.style.margin=L.maxWidth?'0 auto':'0';
+  ord.forEach((k,i)=>{const s=$('#'+k);if(s){s.style.order=i;s.style.gridColumn=L.half[k]?'span 1':'span 2'}const n=$('nav a[href="#'+k+'"]');if(n)n.style.order=i});
   for(const k in cfg.sections)if(!cfg.sections[k]){const s=$('#'+k);if(s)s.style.display='none';const n=$('nav a[href="#'+k+'"]');if(n)n.style.display='none'}
 }
 function start(){const s=Q.get('start')||cfg.eventStart;const t=s?Date.parse(s):NaN;return isNaN(t)?null:t}
@@ -76,9 +79,10 @@ function chart(){
     x.fillStyle=x.strokeStyle;x.font=12*r+'px monospace';x.fillText(s.name,10*r+i*110*r,14*r)})
 }
 function player(){
-  const [a,b]=S(),ls=view=='a'?[a]:view=='b'?[b]:[a,b],p=$('#player');
+  const [a,b]=S(),ls=view=='a'?[a]:view=='b'?[b]:[a,b],p=$('#player'),side=chat&&cfg.player.chatPosition=='side';
+  const pl=s=>`<div class="pl"><iframe src="https://player.twitch.tv/?channel=${s.login}&parent=${HOST}&muted=${!!cfg.player.muted}" allowfullscreen title="${esc(s.name)}" loading="lazy"></iframe></div>`,ch=s=>`<div class="pl chat"><iframe src="https://www.twitch.tv/embed/${s.login}/chat?parent=${HOST}&darkpopout" title="Chat ${esc(s.name)}" loading="lazy"></iframe></div>`;
   p.className='players';p.style.setProperty('--n',ls.length);
-  p.innerHTML=ls.map(s=>`<div class="pl"><iframe src="https://player.twitch.tv/?channel=${s.login}&parent=${HOST}&muted=${!!cfg.player.muted}" allowfullscreen title="${esc(s.name)}" loading="lazy"></iframe></div>`).join('')+(chat?ls.map(s=>`<div class="pl chat"><iframe src="https://www.twitch.tv/embed/${s.login}/chat?parent=${HOST}&darkpopout" title="Chat ${esc(s.name)}" loading="lazy"></iframe></div>`).join(''):'');
+  p.innerHTML=side?ls.map(s=>`<div class="pair">${pl(s)}${ch(s)}</div>`).join(''):ls.map(pl).join('')+(chat?ls.map(ch).join(''):'');
   $$('[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v==view));$('#chatBtn').classList.toggle('on',chat)
 }
 async function refresh(){if(cfg.data.liveFallback)await Promise.all(S().map(s=>liveFetch(s.login)));render()}
