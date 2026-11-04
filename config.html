@@ -1,0 +1,50 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Konfiguration · 24H Stream</title><link rel="stylesheet" href="css/style.css"><script src="js/defaults.js"></script></head>
+<body><header class="top"><b class="logo">J.A.R.V.I.S.<i> // KONFIGURATION</i></b><a class="btn" href="index.html">← Zur Seite</a></header>
+<main><p class="mut" style="margin:1.2rem 0">„Speichern“ gilt sofort in diesem Browser. Für alle Besucher: „Herunterladen“ und als <code>data/config.json</code> im Repo ersetzen.</p>
+<div class="hud"><h3>Seite</h3><label>Titel <input data-p="site.title"></label><label>Untertitel <input data-p="site.subtitle"></label><label>Footer <input data-p="site.footer" size="42"></label></div>
+<div class="hud"><h3>Design</h3><label>Akzent <input type="color" data-p="theme.accent"></label><label>Akzent 2 <input type="color" data-p="theme.accent2"></label><label>Hintergrund <input type="color" data-p="theme.bg"></label><label><input type="checkbox" data-p="theme.scanlines"> Scanlines</label><label><input type="checkbox" data-p="theme.animations"> Animationen</label></div>
+<div class="hud"><h3>Bereiche anzeigen</h3><label><input type="checkbox" data-p="sections.hero"> Countdown/J.A.R.V.I.S.</label><label><input type="checkbox" data-p="sections.streamers"> Streamer-Karten</label><label><input type="checkbox" data-p="sections.streams"> Player</label><label><input type="checkbox" data-p="sections.stats"> Dashboard</label><label><input type="checkbox" data-p="sections.plan"> Programm</label><label><input type="checkbox" data-p="sections.clips"> Clips</label><label><input type="checkbox" data-p="sections.links"> Links</label></div>
+<div class="hud"><h3>Event</h3><label>Startzeit <input type="datetime-local" id="start"></label><label>Dauer (Std.) <input type="number" min="1" data-p="durationHours"></label></div>
+<div class="hud"><h3>Player</h3><label>Standardansicht <select data-p="player.defaultView"><option value="dual">Doppelansicht</option><option value="a">Streamer 1</option><option value="b">Streamer 2</option></select></label><label><input type="checkbox" data-p="player.chat"> Chat standardmäßig an</label><label><input type="checkbox" data-p="player.muted"> Stumm starten</label><label>Chat-Höhe (px) <input type="number" min="200" data-p="player.chatHeight"></label></div>
+<div class="hud"><h3>Daten</h3><label>Aktualisierung (Sek., min. 30) <input type="number" min="30" data-p="data.refreshSeconds"></label><label><input type="checkbox" data-p="data.liveFallback"> Live-Abfrage im Browser (decapi.me)</label><label><input type="checkbox" data-p="data.showTwitchTracker"> TwitchTracker-Zeilen</label><br><label>Follower-Meilensteine (Komma) <input data-p="data.followerMilestones" data-list="1" size="42"></label><label>Event-Meilensteine in Std. (Komma) <input data-p="data.eventMilestones" data-list="1" size="24"></label></div>
+<div class="hud" id="st"></div><div id="lists"></div>
+<div class="hud"><h3>Aktionen</h3><button id="save">Speichern</button><button id="dl">Herunterladen</button><button id="cp">JSON kopieren</button><button id="reset">Lokale Änderungen verwerfen</button><span id="msg" class="mut"></span><textarea id="json" readonly></textarea></div></main>
+<script>
+const D={schedule:[['hour','Stunde','number'],['title','Titel'],['note','Notiz']],games:[['name','Spiel'],['note','Notiz']],challenges:[['title','Challenge'],['note','Notiz']],clips:[['id','Clip-Link oder -ID'],['title','Titel']],socials:[['label','Name (z. B. Discord)'],['url','URL https://…']],links:[['label','Name'],['url','URL https://…']]};
+const T={schedule:'Streamplan',games:'Geplante Spiele',challenges:'Challenges',clips:'Clips manuell hinzufügen',socials:'Social Media & Discord',links:'Weitere Links'};
+const $=s=>document.querySelector(s),e=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let c;
+const toLocal=i=>{const d=new Date(i);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,16)};
+const getP=(o,p)=>p.split('.').reduce((a,k)=>a?.[k],o),setP=(o,p,v)=>{const k=p.split('.'),l=k.pop();k.reduce((a,x)=>a[x],o)[l]=v};
+const exs=s=>(s.extra||[]).map(x=>x.label+'|'+x.url).join('; ');
+async function load(){
+  let o;try{const l=localStorage.getItem('cfgOverride');o=l?JSON.parse(l):await(await fetch('data/config.json')).json()}catch(x){o={}}
+  c=mergeCfg(DEFAULTS,o);if(!c.streamers.length)c.streamers=[{login:'kevone2107',name:'KevOne2107'},{login:'sgt_buddie',name:'Sgt_Buddie'}];
+  c.streamers.forEach(s=>s.extraText=exs(s));draw()}
+function draw(){
+  document.querySelectorAll('[data-p]').forEach(i=>{const v=getP(c,i.dataset.p);if(i.type=='checkbox')i.checked=!!v;else i.value=Array.isArray(v)?v.join(', '):(v??'')});
+  $('#start').value=c.eventStart?toLocal(c.eventStart):'';
+  $('#st').innerHTML='<h3>Streamer</h3>'+c.streamers.map((s,i)=>`<div class="row"><input data-s="${i}" data-f="login" value="${e(s.login)}" placeholder="Twitch-Login"><input data-s="${i}" data-f="name" value="${e(s.name)}" placeholder="Anzeigename"><input data-s="${i}" data-f="avatar" value="${e(s.avatar)}" placeholder="Profilbild-URL (optional)"><input data-s="${i}" data-f="extraText" value="${e(s.extraText)}" placeholder="Zusatzlinks: Name|URL; Name|URL"></div>`).join('');
+  $('#lists').innerHTML=Object.keys(D).map(k=>`<div class="hud"><h3>${T[k]}</h3>${c[k].map((r,i)=>`<div class="row">${D[k].map(([f,p,t])=>`<input data-k="${k}" data-i="${i}" data-f="${f}" type="${t||'text'}" placeholder="${p}" value="${e(r[f]??'')}">`).join('')}<button data-del="${k}:${i}">✕</button></div>`).join('')}<button data-add="${k}">+ Eintrag</button></div>`).join('');
+  out()}
+function clean(){
+  const o=JSON.parse(JSON.stringify(c));
+  o.eventStart=$('#start').value?new Date($('#start').value).toISOString():null;
+  o.streamers=c.streamers.filter(s=>s.login&&s.login.trim()).map(s=>{const r={login:s.login.trim().toLowerCase(),name:s.name||s.login,extra:(s.extraText||'').split(';').map(x=>x.split('|').map(y=>y.trim())).filter(x=>x[0]&&x[1]).map(x=>({label:x[0],url:x[1]}))};if(s.avatar)r.avatar=s.avatar;return r});
+  for(const k in D)o[k]=c[k].map(r=>Object.fromEntries(Object.entries(r).filter(([,v])=>v!==''&&v!=null))).filter(r=>Object.keys(r).length);
+  return o}
+const out=()=>$('#json').value=JSON.stringify(clean(),null,2);
+const msg=t=>{$('#msg').textContent=' '+t};
+document.addEventListener('input',x=>{const t=x.target,d=t.dataset;
+  if(d.p){setP(c,d.p,t.type=='checkbox'?t.checked:d.list?t.value.split(',').map(s=>s.trim()).filter(Boolean).map(Number).filter(n=>!isNaN(n)):t.type=='number'?(+t.value||0):t.value)}
+  else if(d.s!=null)c.streamers[d.s][d.f]=t.value;
+  else if(d.k)c[d.k][d.i][d.f]=d.f=='hour'?(t.value===''?'':+t.value):t.value;
+  out()});
+document.addEventListener('click',x=>{const d=x.target.dataset;if(d.add){c[d.add].push({});draw()}if(d.del){const[k,i]=d.del.split(':');c[k].splice(+i,1);draw()}});
+$('#start').oninput=out;
+$('#save').onclick=()=>{const o=clean();if(o.streamers.length<2)return msg('Zwei Streamer nötig.');localStorage.setItem('cfgOverride',JSON.stringify(o));msg('Gespeichert (nur dieser Browser).')};
+$('#reset').onclick=()=>{localStorage.removeItem('cfgOverride');load();msg('Zurückgesetzt auf data/config.json.')};
+$('#cp').onclick=()=>navigator.clipboard.writeText($('#json').value).then(()=>msg('Kopiert.'),()=>msg('Kopieren nicht möglich.'));
+$('#dl').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([$('#json').value],{type:'application/json'}));a.download='config.json';a.click()};
+load();
+</script></body></html>
