@@ -1,1 +1,40 @@
-{"updated":null,"source":null,"streamers":{}}
+{
+ "updated": "2026-11-04T08:43:47.594Z",
+ "source": "twitch-helix",
+ "streamers": {
+  "kevone2107": {
+   "name": "kevone2107",
+   "avatar": "https://static-cdn.jtvnw.net/jtv_user_pictures/b927665e-ec27-4a54-85b1-c4d034972056-profile_image-300x300.png",
+   "live": false,
+   "title": null,
+   "game": null,
+   "viewers": null,
+   "followers": 729,
+   "startedAt": null,
+   "tt": {
+    "avg": 19,
+    "max": 52,
+    "hours": 3139,
+    "rank": 62660,
+    "followers": 729
+   }
+  },
+  "sgt_buddie": {
+   "name": "Sgt_Buddie",
+   "avatar": "https://static-cdn.jtvnw.net/jtv_user_pictures/ade3d88d-007d-4fdd-8f8b-187fbbb9b6d1-profile_image-300x300.png",
+   "live": false,
+   "title": null,
+   "game": null,
+   "viewers": null,
+   "followers": 336,
+   "startedAt": null,
+   "tt": {
+    "avg": 16,
+    "max": 42,
+    "hours": 1645,
+    "rank": 95680,
+    "followers": 335
+   }
+  }
+ }
+}
